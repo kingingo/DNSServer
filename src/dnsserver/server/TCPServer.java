@@ -42,6 +42,12 @@ public class TCPServer implements Server, Runnable{
 		}
 	}
 	
+	public String getAddressAndPort() {
+		if(this.addr == null)
+			return "0.0.0.0:"+this.port;
+		return this.addr.getHostAddress()+":"+this.port;
+	}
+	
 	public void shutdown() {
 		if(this.socket!=null) {
 			try {
@@ -54,6 +60,7 @@ public class TCPServer implements Server, Runnable{
 	}
 
 	public void run() {
+		Main.log("Starting TCP Socket monitor on address " + getAddressAndPort());
 		while(Main.isRunning()) {
 			if(this.socket == null)break;
 			try {
