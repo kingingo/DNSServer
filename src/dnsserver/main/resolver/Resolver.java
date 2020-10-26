@@ -1,4 +1,4 @@
-package dnsserver.server.resolver;
+package dnsserver.main.resolver;
 
 import org.xbill.DNS.Message;
 

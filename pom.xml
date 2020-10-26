@@ -61,8 +61,23 @@
 			<id>projectlombok.org</id>
 			<url>https://projectlombok.org/edge-releases</url>
 		</repository>
+		<repository>
+			<id>repo.imcode.com</id>
+			<url>http://repo.imcode.com/maven2/</url>
+		</repository>
 	</repositories>
 	<dependencies>
+		<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>8.0.22</version>
+		</dependency>
+		<dependency>
+			<groupId>se.unlogic</groupId>
+			<artifactId>standardutils</artifactId>
+			<version>1.2.5</version>
+		</dependency>
 		<!-- https://mvnrepository.com/artifact/dnsjava/dnsjava -->
 		<dependency>
 			<groupId>dnsjava</groupId>

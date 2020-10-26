@@ -1,4 +1,4 @@
-package dnsserver.server.resolver;
+package dnsserver.main.resolver;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -27,8 +27,6 @@ import org.xbill.DNS.Zone;
 
 import dnsserver.main.Main;
 import dnsserver.main.Utils;
-import dnsserver.main.resolver.Request;
-import dnsserver.main.resolver.Resolver;
 
 public class AuthoritativeResolver implements Resolver {
 	private static final String DNS_SERVER = "dns.google";
@@ -98,7 +96,6 @@ public class AuthoritativeResolver implements Resolver {
 		} else {
 			Main.debug("SimpleResolver forwarding query " + Utils.toString(request.getQuery().getQuestion()) + " to server " + DNS_SERVER);
 			Message response = this.resolver.send(query);
-			
 			
 			
 			Integer rcode = response.getRcode();
