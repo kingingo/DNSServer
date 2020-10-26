@@ -80,6 +80,16 @@ public class DynamicDNSUpdater implements Runnable{
 	        debug("Hostname: "+hostname);
 	        debug("IPv4: "+ipv4);
 	        debug("IPv6: "+ipv6);
+	        if(!ipv6.isEmpty() && !ipv6.isBlank()) {
+	        	InetAddress adr = InetAddress.getByName(ipv6);
+	        	Main.getIpWhiteList().add(adr.toString());
+	        	debug("Add IPv6 to whitelist!");
+	        }
+	        if(!ipv4.isEmpty() && !ipv4.isBlank()) {
+	        	InetAddress adr = InetAddress.getByName(ipv4);
+	        	Main.getIpWhiteList().add(adr.toString());
+	        	debug("Add IPv4 to whitelist!");
+	        }
 	        
 	      }catch (SocketException e) {
 	    	  warn("SocketException thrown from UDP socket on address " + getAddressAndPort() + ", " + e);
@@ -89,7 +99,7 @@ public class DynamicDNSUpdater implements Runnable{
 	        warn("Throwable thrown by UDO socket on address " + getAddressAndPort(), t);
 	      } 
 	    } 
-	    log("UDP socket monitor on address " + getAddressAndPort() + " shutdown");
+	    log("DynDNS Updater monitor on address " + getAddressAndPort() + " shutdown");
 	}
 
 	public void shutdown() {

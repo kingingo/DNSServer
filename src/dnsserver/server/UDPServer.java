@@ -48,9 +48,10 @@ public class UDPServer implements Server, Runnable{
 	        indp = new DatagramPacket(in, in.length);
 	        indp.setLength(in.length);
 	        this.socket.receive(indp);
+	        if(Main.isBlacklisted(indp.getAddress()))continue;
 	        
 	        Main.debug("UDP connection from " + indp.getSocketAddress());
-	        if (Main.isRunning())
+	        if (Main.isRunning() && Main.isWhitelisted(indp.getAddress()))
 	          Main.getUdpThreadPool().execute(new UDPConnection(this.socket, indp)); 
 	      } catch (RejectedExecutionException e) {
 	        if (Main.isRunning()) {

@@ -13,7 +13,6 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.xbill.DNS.Header;
 import org.xbill.DNS.Message;
 import org.xbill.DNS.Name;
 import org.xbill.DNS.OPTRecord;
@@ -60,6 +59,12 @@ public class Main {
 	public static boolean debug = true;
 
 	@Getter
+	private static ArrayList<String> ipWhiteList = new ArrayList<>();
+
+	@Getter
+	private static HashMap<String,Integer> ipBlackList = new HashMap<>();
+	
+	@Getter
 	private static ThreadPoolExecutor tcpThreadPool;
 	@Getter
 	private static ThreadPoolExecutor udpThreadPool;
@@ -82,6 +87,27 @@ public class Main {
 	private static UDPServer udpServer;
 	private static DynamicDNSUpdater ddns_updater;
 
+	public static boolean isBlacklisted(InetAddress adr) {
+		if(ipBlackList.containsKey(adr.toString())) {
+			int counter = ipBlackList.get(adr.toString());
+			ipBlackList.remove(adr.toString());
+			counter++;
+			ipBlackList.put(adr.toString(),counter);
+			return true;
+		}
+		return false;
+	}
+	
+	public static boolean isWhitelisted(InetAddress adr) {
+		boolean in;
+		if(!(in = ipWhiteList.contains(adr.toString()))) {
+			Main.warn("The adress "+adr+" tried to connect but is not whitelisted...");
+			ipBlackList.put(adr.toString(),0);
+		}
+			
+		return in;
+	}
+	
 	public static void log(String msg) {
 		System.out.println("INFO | " + msg);
 	}
@@ -177,10 +203,8 @@ public class Main {
 			}
 			log("stop UDP Server...");
 			udpServer.shutdown();
-			
-			log("stop Dynamic DNS Updater");
+			log("stop DynDNS Updater...");
 			ddns_updater.shutdown();
-			
 			log("stop Terminal...");
 			Terminal.getInstance().stop();
 			status = Status.SHUTDOWN;

@@ -66,7 +66,8 @@ public class TCPServer implements Server, Runnable{
 			try {
 				Main.log("TCP Server waiting for connections...");
 				Socket connection = this.socket.accept();
-				Main.getTcpThreadPool().execute(new TCPConnection(connection));
+				if(!Main.isBlacklisted(connection.getInetAddress()) && Main.isWhitelisted(connection.getInetAddress()))
+					Main.getTcpThreadPool().execute(new TCPConnection(connection));
 			}catch (SocketException e) {
 				Main.log("SocketException thrown from TCP Server");
 			}catch(NullPointerException e) {
@@ -75,7 +76,7 @@ public class TCPServer implements Server, Runnable{
 				Main.warn("IOException thrown from TCP Server",e);
 			}
 		}
-		Main.log("TCP socket monitor shutdown");
+		Main.log("TCP socket monitor on address " + getAddressAndPort() + " shutdown");
 	}
 
 }
