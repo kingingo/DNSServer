@@ -5,6 +5,10 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
+
+import javax.sql.DataSource;
 
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.Header;
@@ -14,9 +18,50 @@ import org.xbill.DNS.Record;
 import org.xbill.DNS.TSIG;
 import org.xbill.DNS.TSIGRecord;
 import org.xbill.DNS.Type;
+import org.xbill.DNS.Zone;
+
+import dnsserver.main.zoneprovider.db.beans.DBRecord;
+import dnsserver.main.zoneprovider.db.beans.DBZone;
+import dnsserver.main.zoneprovider.file.FileZoneProvider;
+import se.unlogic.standardutils.dao.AnnotatedDAO;
+import se.unlogic.standardutils.dao.AnnotatedDAOFactory;
+import se.unlogic.standardutils.dao.SimpleAnnotatedDAOFactory;
+import se.unlogic.standardutils.dao.SimpleDataSource;
+import se.unlogic.standardutils.dao.TransactionHandler;
 
 public class Utils {
 
+	public static void importZones(String directory, String driver, String url, String username, String password) throws Throwable {
+	    FileZoneProvider fileZoneProvider = new FileZoneProvider(directory);
+	    Collection<Zone> zones = fileZoneProvider.getPrimaryZones();
+	    ArrayList<DBZone> dbZones = new ArrayList<DBZone>();
+	    for (Zone zone : zones) {
+	      System.out.println("Converting zone " + zone.getSOA().getName().toString() + "...");
+	      dbZones.add(new DBZone(zone, false));
+	    } 
+	    SimpleDataSource simpleDataSource = new SimpleDataSource(driver, url, username, password);
+	    SimpleAnnotatedDAOFactory annotatedDAOFactory = new SimpleAnnotatedDAOFactory();
+	    AnnotatedDAO<DBZone> zoneDAO = new AnnotatedDAO((DataSource)simpleDataSource, DBZone.class, (AnnotatedDAOFactory)annotatedDAOFactory);
+	    AnnotatedDAO<DBRecord> recordDAO = new AnnotatedDAO((DataSource)simpleDataSource, DBRecord.class, (AnnotatedDAOFactory)annotatedDAOFactory);
+	    TransactionHandler transactionHandler = zoneDAO.createTransaction();
+	    try {
+	      for (DBZone zone : dbZones) {
+	        System.out.println("Storing zone " + zone + "...");
+	        zone.setEnabled(true);
+	        zoneDAO.add(zone, transactionHandler, null);
+	        for (DBRecord dbRecord : zone.getRecords()) {
+	          System.out.println("Storing record " + dbRecord + "...");
+	          dbRecord.setZone(zone);
+	          recordDAO.add(dbRecord, transactionHandler, null);
+	        } 
+	      } 
+	      transactionHandler.commit();
+	    } catch (Throwable e) {
+	      transactionHandler.abort();
+	      throw e;
+	    } 
+	  }
+	
 	public static Message getInternalResponse(Message query, byte[] in, int length, Socket socket, OPTRecord queryOPT) {
 		int defaultResponse = 3;
 	    int flags = 0;

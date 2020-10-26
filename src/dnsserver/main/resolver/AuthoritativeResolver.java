@@ -1,4 +1,4 @@
-package dnsserver.server.resolver;
+package dnsserver.main.resolver;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -96,6 +96,7 @@ public class AuthoritativeResolver implements Resolver {
 		} else {
 			Main.debug("SimpleResolver forwarding query " + Utils.toString(request.getQuery().getQuestion()) + " to server " + DNS_SERVER);
 			Message response = this.resolver.send(query);
+			
 			
 			Integer rcode = response.getRcode();
 			Main.debug("SimpleResolver got response " + Rcode.string(response.getHeader().getRcode()) + "("+rcode+") with " + (response.getSectionArray(1)).length + " answer, " + (response.getSectionArray(2)).length + " authoritative and " + (response.getSectionArray(3)).length + " additional records");

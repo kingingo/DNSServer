@@ -1,6 +1,7 @@
 package dnsserver.main;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -21,21 +22,39 @@ import org.xbill.DNS.TSIG;
 import org.xbill.DNS.Zone;
 
 import dnsserver.dynamic.DynamicDNSUpdater;
+import dnsserver.main.resolver.AuthoritativeResolver;
+import dnsserver.main.resolver.DefaultRequest;
+import dnsserver.main.resolver.FilterResolver;
+import dnsserver.main.resolver.Request;
+import dnsserver.main.resolver.Resolver;
 import dnsserver.main.zoneprovider.ZoneProvider;
+import dnsserver.main.zoneprovider.db.DBZoneProvider;
+import dnsserver.main.zoneprovider.file.FileZoneProvider;
 import dnsserver.main.zones.CachedPrimaryZone;
 import dnsserver.main.zones.CachedSecondaryZone;
 import dnsserver.main.zones.SecondaryZone;
 import dnsserver.server.TCPServer;
 import dnsserver.server.UDPServer;
-import dnsserver.server.resolver.AuthoritativeResolver;
-import dnsserver.server.resolver.DefaultRequest;
-import dnsserver.server.resolver.FilterResolver;
-import dnsserver.server.resolver.Request;
-import dnsserver.server.resolver.Resolver;
 import dnsserver.terminal.Terminal;
 import lombok.Getter;
 
 public class Main {
+	public static final String[] ROOTS = new String[] { 
+			"198.41.0.4",
+            "199.9.14.201",
+            "192.33.4.12",
+            "199.7.91.13",
+            "192.203.230.10",
+            "192.5.5.241",
+            "192.112.36.4",
+            "198.97.190.53",
+            "192.36.148.17",
+            "192.58.128.30",
+            "193.0.14.129",
+            "199.7.83.42",
+            "202.12.27.33"
+    };
+	
 	@Getter
 	private static Status status = Status.STARTING;
 	public static boolean debug = true;
@@ -158,6 +177,10 @@ public class Main {
 			}
 			log("stop UDP Server...");
 			udpServer.shutdown();
+			
+			log("stop Dynamic DNS Updater");
+			ddns_updater.shutdown();
+			
 			log("stop Terminal...");
 			Terminal.getInstance().stop();
 			status = Status.SHUTDOWN;
@@ -233,7 +256,12 @@ public class Main {
 		TSIGs = new HashMap<Name, TSIG>();
 		
 		zoneProviders = new HashMap<String, ZoneProvider>();
-//		zoneProviders.put("Root", new FileZoneProvider("zones"));
+		zoneProviders.put("Root", new FileZoneProvider("zones"));
+		try {
+			zoneProviders.put("Main", new DBZoneProvider("jdbc:mysql://localhost/ddns?serverTimezone=UTC", "root", ""));
+		} catch (ClassNotFoundException e1) {
+			e1.printStackTrace();
+		}
 
 		resolvers.add(new FilterResolver());
 		resolvers.add(new AuthoritativeResolver());

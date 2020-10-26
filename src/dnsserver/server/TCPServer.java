@@ -75,7 +75,7 @@ public class TCPServer implements Server, Runnable{
 				Main.warn("IOException thrown from TCP Server",e);
 			}
 		}
-		Main.log("TCP socket monitor on address " + this.socket.getInetAddress() + " shutdown");
+		Main.log("TCP socket monitor shutdown");
 	}
 
 }
