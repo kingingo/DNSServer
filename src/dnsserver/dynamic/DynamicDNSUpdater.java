@@ -66,7 +66,7 @@ public class DynamicDNSUpdater implements Runnable{
 	        indp = new DatagramPacket(in, in.length);
 	        indp.setLength(in.length);
 	        this.socket.receive(indp);
-	        debug("UDP connection from " + indp.getSocketAddress());
+	        debug("UDP connection from " + indp.getAddress().toString());
 	        DataInputStream input = new DataInputStream(new ByteArrayInputStream(indp.getData()));
 	        
 	        String user = input.readUTF();

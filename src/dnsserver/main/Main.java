@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +40,7 @@ import lombok.Getter;
 public class Main {
 	@Getter
 	private static Status status = Status.STARTING;
+	public static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	public static boolean debug = true;
 
 	@Getter
@@ -84,14 +87,14 @@ public class Main {
 		boolean in;
 		if(!(in = ipWhiteList.contains(adr.toString()))) {
 			Main.warn("The adress "+adr+" tried to connect but is not whitelisted...");
-			ipBlackList.put(adr.toString(),0);
+			ipBlackList.put(adr.toString(),1);
 		}
 			
 		return in;
 	}
 	
 	public static void log(String msg) {
-		System.out.println("INFO | " + msg);
+		System.out.println(format.format(new Date()) + " INFO | " + msg);
 	}
 
 	public static void warn(String msg) {
@@ -99,7 +102,7 @@ public class Main {
 	}
 
 	public static void warn(String msg, Throwable exception) {
-		System.err.println("WARNING | " + msg);
+		System.err.println(format.format(new Date()) +  " WARNING | " + msg);
 		if (exception != null)
 			exception.printStackTrace();
 	}
@@ -110,7 +113,7 @@ public class Main {
 
 	public static void debug(String msg, Throwable exception) {
 		if (debug) {
-			System.err.println("DEBUG | " + msg);
+			System.err.println(format.format(new Date()) + " DEBUG | " + msg);
 			if (exception != null)
 				exception.printStackTrace();
 		}
