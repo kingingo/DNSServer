@@ -129,6 +129,10 @@ public class DBZoneProvider implements ZoneProvider {
     return null;
   }
   
+  public void zoneAdd(SecondaryZone zone) {
+	 
+  }
+  
   public void zoneUpdated(SecondaryZone zone) {
     if (!(zone instanceof DBSecondaryZone)) {
       Main.warn(zone.getClass() + " is not an instance of " + DBSecondaryZone.class + ", ignoring zone update");

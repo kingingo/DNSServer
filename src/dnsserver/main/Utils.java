@@ -31,15 +31,8 @@ import se.unlogic.standardutils.dao.TransactionHandler;
 
 public class Utils {
 
-	public static void importZones(String directory, String driver, String url, String username, String password) throws Throwable {
-	    FileZoneProvider fileZoneProvider = new FileZoneProvider(directory);
-	    Collection<Zone> zones = fileZoneProvider.getPrimaryZones();
-	    ArrayList<DBZone> dbZones = new ArrayList<DBZone>();
-	    for (Zone zone : zones) {
-	      System.out.println("Converting zone " + zone.getSOA().getName().toString() + "...");
-	      dbZones.add(new DBZone(zone, false));
-	    } 
-	    SimpleDataSource simpleDataSource = new SimpleDataSource(driver, url, username, password);
+	public static void importZones(ArrayList<DBZone> dbZones, String url, String username, String password) throws Throwable {
+		SimpleDataSource simpleDataSource = new SimpleDataSource("com.mysql.cj.jdbc.Driver", url, username, password);
 	    SimpleAnnotatedDAOFactory annotatedDAOFactory = new SimpleAnnotatedDAOFactory();
 	    AnnotatedDAO<DBZone> zoneDAO = new AnnotatedDAO((DataSource)simpleDataSource, DBZone.class, (AnnotatedDAOFactory)annotatedDAOFactory);
 	    AnnotatedDAO<DBRecord> recordDAO = new AnnotatedDAO((DataSource)simpleDataSource, DBRecord.class, (AnnotatedDAOFactory)annotatedDAOFactory);
@@ -60,6 +53,17 @@ public class Utils {
 	      transactionHandler.abort();
 	      throw e;
 	    } 
+	}
+	
+	public static void importZones(String directory, String url, String username, String password) throws Throwable {
+	    FileZoneProvider fileZoneProvider = new FileZoneProvider(directory);
+	    Collection<Zone> zones = fileZoneProvider.getPrimaryZones();
+	    ArrayList<DBZone> dbZones = new ArrayList<DBZone>();
+	    for (Zone zone : zones) {
+	      System.out.println("Converting zone " + zone.getSOA().getName().toString() + "...");
+	      dbZones.add(new DBZone(zone, false));
+	    } 
+	    importZones(dbZones, url, username, password);
 	  }
 	
 	public static Message getInternalResponse(Message query, byte[] in, int length, Socket socket, OPTRecord queryOPT) {

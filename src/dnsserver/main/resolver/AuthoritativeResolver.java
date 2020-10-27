@@ -29,16 +29,6 @@ import dnsserver.main.Main;
 import dnsserver.main.Utils;
 
 public class AuthoritativeResolver implements Resolver {
-	private static final String DNS_SERVER = "dns.google";
-	private SimpleResolver resolver;
-
-	public AuthoritativeResolver(){
-		try {
-			this.resolver = new SimpleResolver(DNS_SERVER);
-		} catch (UnknownHostException e) {
-			Main.warn("AuthoritativeResolver couldn't resolve the host "+DNS_SERVER, e);
-		}
-	}
 	
 	public String getName() {
 		return this.getClass().getSimpleName();
@@ -46,6 +36,23 @@ public class AuthoritativeResolver implements Resolver {
 	
 	public Message generateReply(Request request) throws Exception {
 		Message query = request.getQuery();
+		
+		Header header = query.getHeader();
+		if (header.getFlag(0))
+			return null;
+		if (header.getRcode() != 0)
+			return null;
+		if (header.getOpcode() != 0)
+			return null;
+		
+		TSIGRecord queryTSIG = query.getTSIG();
+		TSIG tsig = null;
+		if (queryTSIG != null) {
+			tsig = Main.getTSIG(queryTSIG.getName());
+			if (tsig == null || tsig.verify(query, request.getRawQuery(), request.getRawQueryLength(), null) != 0)
+				return null;
+		}
+		
 		Record queryRecord = query.getQuestion();
 		if (queryRecord == null)
 			return null;
@@ -54,20 +61,7 @@ public class AuthoritativeResolver implements Resolver {
 		if (zone != null) {
 			Main.debug("Resolver " + getName() + " processing request for " + name + ", matching zone found ");
 			int flags = 0;
-			Header header = query.getHeader();
-			if (header.getFlag(0))
-				return null;
-			if (header.getRcode() != 0)
-				return null;
-			if (header.getOpcode() != 0)
-				return null;
-			TSIGRecord queryTSIG = query.getTSIG();
-			TSIG tsig = null;
-			if (queryTSIG != null) {
-				tsig = Main.getTSIG(queryTSIG.getName());
-				if (tsig == null || tsig.verify(query, request.getRawQuery(), request.getRawQueryLength(), null) != 0)
-					return null;
-			}
+			
 			OPTRecord queryOPT = query.getOPT();
 			if (queryOPT != null && (queryOPT.getFlags() & 0x8000) != 0)
 				flags = 1;
@@ -93,20 +87,8 @@ public class AuthoritativeResolver implements Resolver {
 			}
 			response.setTSIG(tsig, 0, queryTSIG);
 			return response;
-		} else {
-			Main.debug("SimpleResolver forwarding query " + Utils.toString(request.getQuery().getQuestion()) + " to server " + DNS_SERVER);
-			Message response = this.resolver.send(query);
-			
-			
-			Integer rcode = response.getRcode();
-			Main.debug("SimpleResolver got response " + Rcode.string(response.getHeader().getRcode()) + "("+rcode+") with " + (response.getSectionArray(1)).length + " answer, " + (response.getSectionArray(2)).length + " authoritative and " + (response.getSectionArray(3)).length + " additional records");
-
-			if(rcode == null || rcode.intValue() == 3 || rcode.intValue() == 2 || (rcode.intValue() == 0 && (response.getSectionArray(1)).length == 0 && (response.getSectionArray(2)).length == 0)){
-				Main.debug("Resolver " + getName() + " ignoring request for " + name + ", no matching zone found");
-				return null;
-			}
-			return response;
 		}
+		return null;
 	}
 
 	private final void addAdditional(Message response, int flags) {

@@ -12,7 +12,7 @@ public class ImportCommand implements CommandExecutor{
 			String directory = args[0];
 			
 			try {
-				Utils.importZones(directory, "com.mysql.jdbc.Driver", "jdbc:mysql://localhost/ddns?serverTimezone=UTC", "root", "");
+				Utils.importZones(directory, "jdbc:mysql://localhost/ddns?serverTimezone=UTC", "root", "");
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}
