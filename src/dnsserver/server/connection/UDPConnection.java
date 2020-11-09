@@ -22,6 +22,7 @@ public class UDPConnection implements Runnable{
 	
 	public void run() {
 		try {
+			  long time = System.currentTimeMillis();
 		      byte[] response = (byte[])null;
 
 			  Message query = new Message(this.packet.getData());
@@ -35,6 +36,8 @@ public class UDPConnection implements Runnable{
 		      outdp.setAddress(this.packet.getAddress());
 		      outdp.setPort(this.packet.getPort());
 		      try {
+		    	time = System.currentTimeMillis() - time;
+				Main.log("UDP Response time " + time + " ms");
 		        this.socket.send(outdp);
 		      } catch (IOException e) {
 		        Main.warn("Error sending UDP response to " + this.packet.getAddress() + ", " + e);

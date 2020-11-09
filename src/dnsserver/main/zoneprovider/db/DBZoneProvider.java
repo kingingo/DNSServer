@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import javax.sql.DataSource;
+
+import org.xbill.DNS.Message;
 import org.xbill.DNS.Zone;
 
 import dnsserver.main.Main;
@@ -47,7 +49,7 @@ public class DBZoneProvider implements ZoneProvider {
   private QueryParameterFactory<DBRecord, DBZone> recordZoneQueryParameterFactory;
 
   public DBZoneProvider(String url, String username, String password) throws ClassNotFoundException{
-	  this("com.mysql.jdbc.Driver",url,username, password);
+	  this("com.mysql.cj.jdbc.Driver",url,username, password);
   }
   
   public DBZoneProvider(String driver, String url, String username, String password) throws ClassNotFoundException{
@@ -129,8 +131,8 @@ public class DBZoneProvider implements ZoneProvider {
     return null;
   }
   
-  public void zoneAdd(SecondaryZone zone) {
-	 
+  public void addSecondaryZone(Message response) {
+	  
   }
   
   public void zoneUpdated(SecondaryZone zone) {

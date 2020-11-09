@@ -24,7 +24,11 @@ import org.xbill.DNS.Zone;
 
 import dnsserver.main.Main;
 import dnsserver.main.Utils;
+import dnsserver.main.zoneprovider.db.DBZoneProvider;
+import dnsserver.main.zoneprovider.db.beans.DBSecondaryZone;
 import dnsserver.main.zoneprovider.db.beans.DBZone;
+import dnsserver.main.zones.CachedSecondaryZone;
+import dnsserver.main.zones.SecondaryZone;
 import lombok.Getter;
 
 public class RecursiveResolver implements Resolver {
@@ -33,28 +37,23 @@ public class RecursiveResolver implements Resolver {
 
 	@Override
 	public Message generateReply(Request request) throws Exception {
-		MessageResolver mr = new MessageResolver(request.getQuery());
-		Record[] records = mr.run();
-		Message response = mr.getResponse();
+		long time = System.currentTimeMillis();
+		ExtendedResolver resolver = new ExtendedResolver(SERVERS);
+		Message response = resolver.send(request.getQuery());
 		
 		Integer rcode = response.getRcode();
-		Main.debug("Got response " + Rcode.string(response.getHeader().getRcode()) + "("+rcode+") with " + (response.getSectionArray(1)).length + " answer, " + (response.getSectionArray(2)).length + " authoritative and " + (response.getSectionArray(3)).length + " additional records");
+		time = System.currentTimeMillis() - time;
+		Main.debug("RecursiveResolver("+time+" ms): Got response " + Rcode.string(response.getHeader().getRcode()) + "("+rcode+") with " + (response.getSectionArray(1)).length + " answer, " + (response.getSectionArray(2)).length + " authoritative and " + (response.getSectionArray(3)).length + " additional records");
 
-		if(rcode == null || rcode.intValue() == 3 || rcode.intValue() == 2 || (rcode.intValue() == 0 && (response.getSectionArray(1)).length == 0 && (response.getSectionArray(2)).length == 0)){
+		if(rcode == null 
+				|| rcode.intValue() == 3 
+				|| rcode.intValue() == 2 
+				|| (rcode.intValue() == 0 && (response.getSectionArray(1)).length == 0 && (response.getSectionArray(2)).length == 0)){
 			Main.debug("Resolver RecursiveResolver ignoring request for " + request.getQuery().getQuestion().getName() + ", no matching zone found");
 			return null;
 		}
-		
-		Zone zone = new Zone(Name.fromString("google.de", Name.root), records);
-		DBZone db = new DBZone(zone, true);
-		ArrayList<DBZone> dbZones = new ArrayList<>();
-		dbZones.add(db);
-		try {
-			Utils.importZones(dbZones, "jdbc:mysql://localhost/ddns?serverTimezone=UTC", "root", "");
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
 
+		((DBZoneProvider)Main.getZoneProviders().get("DBZoneProvider")).addSecondaryZone(response);
 		return response;
 	}
 

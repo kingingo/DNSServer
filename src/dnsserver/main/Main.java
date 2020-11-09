@@ -22,15 +22,21 @@ import org.xbill.DNS.Rcode;
 import org.xbill.DNS.TSIG;
 import org.xbill.DNS.Zone;
 
+import com.github.jgonian.ipmath.Ipv4;
+import com.github.jgonian.ipmath.Ipv4Range;
+import com.github.jgonian.ipmath.Ipv6;
+import com.github.jgonian.ipmath.Ipv6Range;
+import com.github.jgonian.ipmath.SortedResourceSet;
+
 import dnsserver.dynamic.DynamicDNSUpdater;
 import dnsserver.main.resolver.AuthoritativeResolver;
 import dnsserver.main.resolver.DefaultRequest;
 import dnsserver.main.resolver.FilterResolver;
+import dnsserver.main.resolver.RecursiveResolver;
 import dnsserver.main.resolver.Request;
 import dnsserver.main.resolver.Resolver;
 import dnsserver.main.zoneprovider.ZoneProvider;
 import dnsserver.main.zoneprovider.db.DBZoneProvider;
-import dnsserver.main.zoneprovider.file.FileZoneProvider;
 import dnsserver.main.zones.CachedPrimaryZone;
 import dnsserver.main.zones.CachedSecondaryZone;
 import dnsserver.main.zones.SecondaryZone;
@@ -60,12 +66,6 @@ public class Main {
 	private static Status status = Status.STARTING;
 	public static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	public static boolean debug = true;
-
-	@Getter
-	private static ArrayList<String> ipWhiteList = new ArrayList<>();
-
-	@Getter
-	private static HashMap<String,Integer> ipBlackList = new HashMap<>();
 	
 	@Getter
 	private static ThreadPoolExecutor tcpThreadPool;
@@ -75,7 +75,8 @@ public class Main {
 
 	private static ConcurrentHashMap<Name, CachedPrimaryZone> primaryZoneMap;
 
-	private static ConcurrentHashMap<Name, CachedSecondaryZone> secondaryZoneMap;
+	public static ConcurrentHashMap<Name, CachedSecondaryZone> secondaryZoneMap;
+	@Getter
 	private static HashMap<String, ZoneProvider> zoneProviders;
 	static HashMap<Name, TSIG> TSIGs;
 
@@ -89,13 +90,14 @@ public class Main {
 	private static TCPServer tcpServer;
 	private static UDPServer udpServer;
 	private static DynamicDNSUpdater ddns_updater;
-
+	
 	public static boolean isBlacklisted(InetAddress adr) {
-		if(ipBlackList.containsKey(adr.toString())) {
-			int counter = ipBlackList.get(adr.toString());
-			ipBlackList.remove(adr.toString());
-			counter++;
-			ipBlackList.put(adr.toString(),counter);
+		String ip = adr.getHostAddress();
+		if(Firewall.containsBlacklist(ip)) {
+			if(Firewall.containsWhitelist(ip)) {
+				Firewall.removeFromBlacklist(ip);
+				return false;
+			}
 			return true;
 		}
 		return false;
@@ -103,9 +105,10 @@ public class Main {
 	
 	public static boolean isWhitelisted(InetAddress adr) {
 		boolean in;
-		if(!(in = ipWhiteList.contains(adr.toString()))) {
+		String ip = adr.getHostAddress();
+		if(!(in = Firewall.containsWhitelist(ip))) {
 			Main.warn("The adress "+adr+" tried to connect but is not whitelisted...");
-			ipBlackList.put(adr.toString(),1);
+			Firewall.addToBlacklist(ip);
 		}
 			
 		return in;
@@ -219,9 +222,9 @@ public class Main {
 		int maxLength;
 		Request request = new DefaultRequest(socketAddress, query, in, length, socket);
 		Message response = null;
-		for (Resolver res : resolvers) {
+		for (int i = 0; i < resolvers.size(); i++) {
 			try {
-				response = res.generateReply(request);
+				response = resolvers.get(i).generateReply(request);
 				if (response != null)
 					break;
 			} catch (Exception e) {
@@ -283,15 +286,16 @@ public class Main {
 		TSIGs = new HashMap<Name, TSIG>();
 		
 		zoneProviders = new HashMap<String, ZoneProvider>();
-		zoneProviders.put("Root", new FileZoneProvider("zones"));
+//		zoneProviders.put("Root", new FileZoneProvider("zones"));
 		try {
-			zoneProviders.put("Main", new DBZoneProvider("jdbc:mysql://localhost/ddns?serverTimezone=UTC", "root", ""));
+			zoneProviders.put("DBZoneProvider", new DBZoneProvider("jdbc:mysql://localhost/ddns?serverTimezone=UTC", "test", ""));
 		} catch (ClassNotFoundException e1) {
 			e1.printStackTrace();
 		}
 
 		resolvers.add(new FilterResolver());
 		resolvers.add(new AuthoritativeResolver());
+		resolvers.add(new RecursiveResolver());
 
 		try {
 			log("Start DDNS Updater");

@@ -67,6 +67,11 @@
 		</repository>
 	</repositories>
 	<dependencies>
+		<dependency>
+			<groupId>com.github.jgonian</groupId>
+			<artifactId>commons-ip-math</artifactId>
+			<version>1.32</version>
+		</dependency>
 		<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
 		<dependency>
 			<groupId>mysql</groupId>

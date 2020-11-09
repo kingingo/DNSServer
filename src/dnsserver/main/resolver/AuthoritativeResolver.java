@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Iterator;
+import java.util.List;
 
 import org.xbill.DNS.CNAMERecord;
 import org.xbill.DNS.DNAMERecord;
@@ -15,6 +16,7 @@ import org.xbill.DNS.NSRecord;
 import org.xbill.DNS.Name;
 import org.xbill.DNS.NameTooLongException;
 import org.xbill.DNS.OPTRecord;
+import org.xbill.DNS.RRSIGRecord;
 import org.xbill.DNS.RRset;
 import org.xbill.DNS.Rcode;
 import org.xbill.DNS.Record;
@@ -148,12 +150,11 @@ public class AuthoritativeResolver implements Resolver {
 					response.getHeader().setFlag(5);
 				rcode = addAnswer(response, newname, type, dclass, iterations + 1, flags, (Zone) null);
 			} else if (sr.isSuccessful()) {
-				RRset[] rrsets = (RRset[]) sr.answers().toArray();
+				List<RRset> rrsets = sr.answers();
 				byte b;
 				int i;
-				RRset[] arrayOfRRset1;
-				for (i = (arrayOfRRset1 = rrsets).length, b = 0; b < i;) {
-					RRset rrset = arrayOfRRset1[b];
+				for (i = rrsets.size(), b = 0; b < i;) {
+					RRset rrset = rrsets.get(b);
 					addRRset(name, response, rrset, 1, flags);
 					b++;
 				}
@@ -263,7 +264,7 @@ public class AuthoritativeResolver implements Resolver {
 				return;
 		}
 		if ((flags & 0x2) == 0) {
-			Iterator<?> it = (Iterator<?>) rrset.rrs();
+			Iterator<Record> it = rrset.rrs().iterator();
 			while (it.hasNext()) {
 				Record r = (Record) it.next();
 				if (r.getName().isWild() && !name.isWild())
@@ -272,7 +273,7 @@ public class AuthoritativeResolver implements Resolver {
 			}
 		}
 		if ((flags & 0x3) != 0) {
-			Iterator<?> it = (Iterator<?>) rrset.sigs();
+			Iterator<RRSIGRecord> it = rrset.sigs().iterator();
 			while (it.hasNext()) {
 				Record r = (Record) it.next();
 				if (r.getName().isWild() && !name.isWild())

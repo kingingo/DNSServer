@@ -9,6 +9,13 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.concurrent.RejectedExecutionException;
 
+import com.github.jgonian.ipmath.Ipv4;
+import com.github.jgonian.ipmath.Ipv4Range;
+import com.github.jgonian.ipmath.Ipv6;
+import com.github.jgonian.ipmath.Ipv6Range;
+import com.github.jgonian.ipmath.SortedResourceSet;
+
+import dnsserver.main.Firewall;
 import dnsserver.main.Main;
 import dnsserver.server.connection.UDPConnection;
 
@@ -72,24 +79,20 @@ public class DynamicDNSUpdater implements Runnable{
 	        String user = input.readUTF();
 	        String password = input.readUTF();
 	        String hostname = input.readUTF();
-	        String ipv4 = input.readUTF();
-	        String ipv6 = input.readUTF();
+	        String ip = input.readUTF();
+	        String ip_prefix = "";
+	        
+	        if(ip.contains(":")) {
+	        	ip_prefix = input.readUTF();
+	        }
 	        
 	        debug("User: "+user);
 	        debug("Password: "+password);
 	        debug("Hostname: "+hostname);
-	        debug("IPv4: "+ipv4);
-	        debug("IPv6: "+ipv6);
-	        if(!ipv6.isEmpty() && !ipv6.isBlank()) {
-	        	InetAddress adr = InetAddress.getByName(ipv6);
-	        	Main.getIpWhiteList().add(adr.toString());
-	        	debug("Add IPv6 to whitelist!");
-	        }
-	        if(!ipv4.isEmpty() && !ipv4.isBlank()) {
-	        	InetAddress adr = InetAddress.getByName(ipv4);
-	        	Main.getIpWhiteList().add(adr.toString());
-	        	debug("Add IPv4 to whitelist!");
-	        }
+	        Firewall.addToWhitelist(ip, ip_prefix);
+	        debug("IP: "+ip);
+	        if(!ip_prefix.isEmpty())debug("IP-Prefix: "+ip_prefix);
+	        
 	        
 	      }catch (SocketException e) {
 	    	  warn("SocketException thrown from UDP socket on address " + getAddressAndPort() + ", " + e);
